@@ -6,11 +6,11 @@ export default function PostForm({ onCreated }) {
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [photoFiles, setPhotoFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
-  const handleFileChange = (e) => {
+  /*const handleFileChange = (e) => {
     setPhotoFiles(e.target.files?.[0] || null);
-  };
+  };*/
 
   const handleSubmit = async (e) => {
     e.preventDefault();
