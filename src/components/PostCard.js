@@ -21,9 +21,6 @@ export default function PostCard({ post }) {
         <span className="font-bold text-green-800">
           {post.user || "Anonymous"}
         </span>
-        <span className="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-700">
-          {post.status}
-        </span>
       </div>
 
       <p className="text-gray-700 text-sm leading-relaxed">
