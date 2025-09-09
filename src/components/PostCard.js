@@ -33,12 +33,17 @@ export default function PostCard({ post }) {
         📍 {post.location_text || post.location}
       </p>
 
-      {photoSrc && (
-        <img
-          src={photoSrc}
-          alt="report"
-          className="mt-3 rounded-xl max-h-72 w-full object-cover border"
-        />
+      {post.images && post.images.length > 0 && (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {post.images.map((img) => (
+            <img
+              key={img.id}
+              src={img.image} // already a full URL now
+              alt="report"
+              className="rounded-lg object-cover max-h-48 w-full"
+            />
+          ))}
+        </div>
       )}
 
       <p className="text-xs text-gray-400 mt-2">

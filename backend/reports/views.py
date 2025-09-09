@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import DumpPost
+from .models import DumpPost, DumpPostImage
 from .serializers import DumpPostSerializer
 
 class DumpPostViewSet(viewsets.ModelViewSet):
@@ -12,4 +12,9 @@ class DumpPostViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user if self.request.user.is_authenticated else None
-        serializer.save(user=user)
+        post = serializer.save(user=user)
+
+        # Handle multiple image uploads
+        images = self.request.FILES.getlist("images")
+        for img in images:
+            DumpPostImage.objects.create(post=post, image=img)

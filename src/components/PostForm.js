@@ -5,42 +5,29 @@ import api from "../api";
 export default function PostForm({ onCreated }) {
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
-  const [photoFile, setPhotoFile] = useState(null);
+  const [photoFiles, setPhotoFiles] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const handleFileChange = (e) => {
-    setPhotoFile(e.target.files?.[0] || null);
+    setPhotoFiles(e.target.files?.[0] || null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!description.trim() || !location.trim()) {
-      return alert("Please enter description and location.");
-    }
-
     const formData = new FormData();
     formData.append("description", description);
     formData.append("location_text", location);
-    if (photoFile) formData.append("photo", photoFile);
+
+    // append multiple images
+    photoFiles.forEach((file) => formData.append("images", file));
 
     try {
-      setLoading(true);
-      // IMPORTANT: do NOT set "Content-Type" header manually; browser sets multipart boundary for you
-      const res = await api.post("/posts/", formData);
-      const created = res.data;
-      // notify parent
-      if (typeof onCreated === "function") onCreated(created);
-      // clear form
-      setDescription("");
-      setLocation("");
-      setPhotoFile(null);
+      const res = await api.post("/posts/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      onCreated(res.data);
     } catch (err) {
-      console.error("Upload error:", err);
-      // show useful message if available
-      const serverMsg = err.response?.data || err.message;
-      alert("Upload failed: " + JSON.stringify(serverMsg));
-    } finally {
-      setLoading(false);
+      console.error("Upload failed:", err);
     }
   };
 
@@ -62,7 +49,12 @@ export default function PostForm({ onCreated }) {
         className="w-full border rounded-lg p-2 text-sm"
         required
       />
-      <input type="file" accept="image/*" onChange={handleFileChange} />
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={(e) => setPhotoFiles(Array.from(e.target.files))}
+      />
       <button
         type="submit"
         disabled={loading}
