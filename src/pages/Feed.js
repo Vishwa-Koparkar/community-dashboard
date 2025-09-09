@@ -1,36 +1,43 @@
 // src/pages/Feed.js
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import api from "../api";
 import PostForm from "../components/PostForm";
 import PostCard from "../components/PostCard";
 
 export default function Feed() {
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      user: "Alice",
-      description: "Garbage dumped near park entrance.",
-      location: "Community Park, Sector 12",
-      status: "pending",
-      createdAt: new Date(),
-    },
-    {
-      id: 2,
-      user: "Bob",
-      description: "Overflowing dustbin not cleared for 3 days.",
-      location: "Main Street, Block A",
-      status: "verified",
-      createdAt: new Date(),
-    },
-  ]);
-
-  // showForm = false -> feed visible, plus button below cards
-  // showForm = true  -> only the form is visible
+  const [posts, setPosts] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const addPost = (newPost) => {
-    // when the PostForm calls onAdd, add to state and close the form
-    setPosts((prev) => [newPost, ...prev]);
-    setShowForm(false);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    api
+      .get("/posts/")
+      .then((res) => {
+        if (!cancelled) {
+          // DRF may return list or paginated object; handle both
+          const data = res.data.results || res.data;
+          setPosts(data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch posts:", err);
+        alert(
+          "Could not load posts. Is the backend running at http://127.0.0.1:8000 ?"
+        );
+      })
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // called after successful creation from PostForm
+  const handleCreated = (post) => {
+    // prepend so newest appears first
+    setPosts((prev) => [post, ...prev]);
+    setShowForm(false); // hide form after posting (as you wanted)
   };
 
   const toggleForm = () => setShowForm((s) => !s);
@@ -42,11 +49,15 @@ export default function Feed() {
           🌍 Community Waste Reports
         </h1>
 
-        {/* Feed view (hidden when showForm === true) */}
+        {/* feed view */}
         {!showForm ? (
           <>
             <div className="space-y-4 mb-6">
-              {posts.length === 0 ? (
+              {loading ? (
+                <div className="text-center py-12 text-gray-500">
+                  Loading posts…
+                </div>
+              ) : posts.length === 0 ? (
                 <div className="text-center text-gray-500 py-12 bg-white rounded-2xl border border-dashed border-gray-200">
                   No reports yet — be the first to report an issue.
                 </div>
@@ -62,7 +73,6 @@ export default function Feed() {
                 aria-label="Create report"
                 className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-xl transform hover:-translate-y-1 transition"
               >
-                {/* plus icon (no external icon lib) */}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="w-6 h-6"
@@ -81,7 +91,7 @@ export default function Feed() {
             </div>
           </>
         ) : (
-          // Form-only view
+          // form-only view (with close)
           <div className="bg-white shadow-lg rounded-2xl p-5 border border-green-100">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-green-800">
@@ -92,7 +102,6 @@ export default function Feed() {
                 aria-label="Close form"
                 className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
               >
-                {/* close (X) icon */}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="w-5 h-5"
@@ -108,7 +117,7 @@ export default function Feed() {
               </button>
             </div>
 
-            <PostForm onAdd={addPost} />
+            <PostForm onCreated={handleCreated} />
           </div>
         )}
       </div>

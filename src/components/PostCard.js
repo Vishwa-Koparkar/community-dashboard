@@ -1,12 +1,19 @@
+// src/components/PostCard.js
 import React from "react";
 
 export default function PostCard({ post }) {
-  const badgeClasses =
-    post.status === "resolved"
-      ? "bg-green-100 text-green-700"
-      : post.status === "verified"
-      ? "bg-yellow-100 text-yellow-700"
-      : "bg-gray-100 text-gray-700";
+  // post.photo might be null, a relative path like "/media/..." or a full URL
+  const getPhotoSrc = () => {
+    if (!post.photo) return null;
+    if (typeof post.photo !== "string") return null; // safety
+    if (post.photo.startsWith("http://") || post.photo.startsWith("https://")) {
+      return post.photo;
+    }
+    // assume relative path from Django, prefix the backend origin
+    return `http://127.0.0.1:8000${post.photo}`;
+  };
+
+  const photoSrc = getPhotoSrc();
 
   return (
     <div className="bg-white shadow-md rounded-2xl p-5 border border-gray-100">
@@ -14,25 +21,28 @@ export default function PostCard({ post }) {
         <span className="font-bold text-green-800">
           {post.user || "Anonymous"}
         </span>
-        <span
-          className={`text-xs px-3 py-1 rounded-full font-medium ${badgeClasses}`}
-        >
+        <span className="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-700">
           {post.status}
         </span>
       </div>
+
       <p className="text-gray-700 text-sm leading-relaxed">
         {post.description}
       </p>
-      <p className="text-sm text-gray-500 mt-1">📍 {post.location}</p>
-      {post.photo && (
+      <p className="text-sm text-gray-500 mt-1">
+        📍 {post.location_text || post.location}
+      </p>
+
+      {photoSrc && (
         <img
-          src={URL.createObjectURL(post.photo)}
+          src={photoSrc}
           alt="report"
           className="mt-3 rounded-xl max-h-72 w-full object-cover border"
         />
       )}
+
       <p className="text-xs text-gray-400 mt-2">
-        {new Date(post.createdAt).toLocaleString()}
+        {new Date(post.created_at).toLocaleString()}
       </p>
     </div>
   );

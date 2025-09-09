@@ -1,61 +1,74 @@
+// src/components/PostForm.js
 import React, { useState } from "react";
+import api from "../api";
 
-export default function PostForm({ onAdd }) {
+export default function PostForm({ onCreated }) {
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
-  const [photo, setPhoto] = useState(null);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleFileChange = (e) => {
+    setPhotoFile(e.target.files?.[0] || null);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!description || !location) return;
+    if (!description.trim() || !location.trim()) {
+      return alert("Please enter description and location.");
+    }
 
-    const newPost = {
-      id: Date.now(),
-      user: "CommunityUser",
-      description,
-      location,
-      photo,
-      status: "pending",
-      createdAt: new Date(),
-    };
+    const formData = new FormData();
+    formData.append("description", description);
+    formData.append("location_text", location);
+    if (photoFile) formData.append("photo", photoFile);
 
-    onAdd(newPost);
-    setDescription("");
-    setLocation("");
-    setPhoto(null);
+    try {
+      setLoading(true);
+      // IMPORTANT: do NOT set "Content-Type" header manually; browser sets multipart boundary for you
+      const res = await api.post("/posts/", formData);
+      const created = res.data;
+      // notify parent
+      if (typeof onCreated === "function") onCreated(created);
+      // clear form
+      setDescription("");
+      setLocation("");
+      setPhotoFile(null);
+    } catch (err) {
+      console.error("Upload error:", err);
+      // show useful message if available
+      const serverMsg = err.response?.data || err.message;
+      alert("Upload failed: " + JSON.stringify(serverMsg));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-white shadow-lg rounded-2xl p-5 mb-8 border border-green-100"
-    >
+    <form onSubmit={handleSubmit} className="space-y-3">
       <textarea
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         placeholder="📝 Describe the issue..."
-        className="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-green-400 text-sm"
-        rows="3"
+        className="w-full border rounded-lg p-3 text-sm"
+        rows={4}
         required
       />
       <input
-        type="text"
         value={location}
         onChange={(e) => setLocation(e.target.value)}
-        placeholder="📍 Enter location"
-        className="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-green-400 text-sm"
+        type="text"
+        placeholder="📍 Location (text)"
+        className="w-full border rounded-lg p-2 text-sm"
         required
       />
-      <input
-        type="file"
-        onChange={(e) => setPhoto(e.target.files[0])}
-        className="mb-4 text-sm text-gray-600"
-      />
+      <input type="file" accept="image/*" onChange={handleFileChange} />
       <button
         type="submit"
-        className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-semibold text-sm shadow-md transition duration-200"
+        disabled={loading}
+        className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
       >
-        Post Report
+        {loading ? "Posting..." : "Post Report"}
       </button>
     </form>
   );
