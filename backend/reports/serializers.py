@@ -12,7 +12,11 @@ class DumpPostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DumpPost
-        fields = ["id", "user", "description", "location_text", "status", "created_at", "images"]
+        fields = [
+            "id", "user", "description", "location_text",
+            "latitude", "longitude",  # new fields
+            "status", "created_at", "images"
+        ]
 
     def get_user(self, obj):
         return obj.user.username if obj.user else "Anonymous"
