@@ -13,7 +13,7 @@ export default function PostCard({ post }) {
     return `http://127.0.0.1:8000${post.photo}`;
   };
 
-  const photoSrc = getPhotoSrc();
+  //const photoSrc = getPhotoSrc();
 
   return (
     <div className="bg-white shadow-md rounded-2xl p-5 border border-gray-100">
@@ -32,6 +32,11 @@ export default function PostCard({ post }) {
       <p className="text-sm text-gray-500 mt-1">
         📍 {post.location_text || post.location}
       </p>
+      {post.latitude && post.longitude && (
+        <p className="text-sm text-gray-600">
+          {post.latitude.toFixed(5)}, {post.longitude.toFixed(5)}
+        </p>
+      )}
 
       {post.images && post.images.length > 0 && (
         <div className="mt-3 grid grid-cols-2 gap-2">

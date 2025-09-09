@@ -1,24 +1,36 @@
-// src/components/PostForm.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import api from "../api";
 
-export default function PostForm({ onCreated }) {
+const PostForm = ({ onCreated }) => {
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [photoFiles, setPhotoFiles] = useState([]);
-  const [loading] = useState(false);
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
 
-  /*const handleFileChange = (e) => {
-    setPhotoFiles(e.target.files?.[0] || null);
-  };*/
+  // Get user location on load
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setLatitude(pos.coords.latitude);
+          setLongitude(pos.coords.longitude);
+        },
+        (err) => {
+          console.error("Geolocation error:", err);
+        }
+      );
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData();
     formData.append("description", description);
     formData.append("location_text", location);
+    if (latitude) formData.append("latitude", latitude);
+    if (longitude) formData.append("longitude", longitude);
 
-    // append multiple images
     photoFiles.forEach((file) => formData.append("images", file));
 
     try {
@@ -26,42 +38,48 @@ export default function PostForm({ onCreated }) {
         headers: { "Content-Type": "multipart/form-data" },
       });
       onCreated(res.data);
+      setDescription("");
+      setLocation("");
+      setPhotoFiles([]);
     } catch (err) {
       console.error("Upload failed:", err);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
+    <form
+      onSubmit={handleSubmit}
+      className="p-4 bg-white shadow-md rounded-lg flex flex-col gap-3"
+    >
       <textarea
+        placeholder="Describe the issue..."
+        className="p-2 border rounded"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        placeholder="📝 Describe the issue..."
-        className="w-full border rounded-lg p-3 text-sm"
-        rows={4}
         required
       />
       <input
+        type="text"
+        placeholder="Enter location"
+        className="p-2 border rounded"
         value={location}
         onChange={(e) => setLocation(e.target.value)}
-        type="text"
-        placeholder="📍 Location (text)"
-        className="w-full border rounded-lg p-2 text-sm"
         required
       />
       <input
         type="file"
-        accept="image/*"
         multiple
+        accept="image/*"
         onChange={(e) => setPhotoFiles(Array.from(e.target.files))}
       />
       <button
         type="submit"
-        disabled={loading}
-        className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
+        className="bg-green-600 text-white py-2 rounded hover:bg-green-700"
       >
-        {loading ? "Posting..." : "Post Report"}
+        Submit Report
       </button>
     </form>
   );
-}
+};
+
+export default PostForm;
